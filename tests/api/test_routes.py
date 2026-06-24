@@ -312,11 +312,11 @@ async def test_validation_errors_use_api_error_shape() -> None:
 
 
 @pytest.mark.asyncio
-async def test_cors_allows_only_frontend_origins() -> None:
+async def test_cors_allows_any_origin() -> None:
     service = TaskService(agent_factory=FakeFactory())
 
     async with api_client(service) as client:
-        allowed_responses = [
+        responses = [
             await client.options(
                 "/api/tasks",
                 headers={
@@ -325,28 +325,18 @@ async def test_cors_allows_only_frontend_origins() -> None:
                     "Access-Control-Request-Headers": "content-type",
                 },
             )
-            for origin in ALLOWED_FRONTEND_ORIGINS
+            for origin in (
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:5174",
+                "http://malicious.local:5173",
+            )
         ]
-        disallowed_response = await client.options(
-            "/api/tasks",
-            headers={
-                "Origin": "http://malicious.local:5173",
-                "Access-Control-Request-Method": "POST",
-                "Access-Control-Request-Headers": "content-type",
-            },
-        )
 
-    assert set(ALLOWED_FRONTEND_ORIGINS) == {
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-    }
-    assert all(response.status_code == 200 for response in allowed_responses)
-    assert [
-        response.headers["access-control-allow-origin"]
-        for response in allowed_responses
-    ] == list(ALLOWED_FRONTEND_ORIGINS)
-    assert disallowed_response.status_code == 400
-    assert "access-control-allow-origin" not in disallowed_response.headers
+    assert ALLOWED_FRONTEND_ORIGINS == ("*",)
+    assert all(response.status_code == 200 for response in responses)
+    assert all(
+        response.headers["access-control-allow-origin"] == "*" for response in responses
+    )
 
 
 @pytest.mark.asyncio
