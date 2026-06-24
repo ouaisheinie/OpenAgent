@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, List, Optional, Union
+from typing import Any, Awaitable, Callable, List, Optional, Union
 
 from pydantic import Field
 
@@ -242,9 +242,13 @@ class ToolCallAgent(ReActAgent):
                     )
         logger.info(f"✨ Cleanup complete for agent '{self.name}'.")
 
-    async def run(self, request: Optional[str] = None) -> str:
+    async def run(
+        self,
+        request: Optional[str] = None,
+        on_event: Callable[[dict], Awaitable[None]] | None = None,
+    ) -> str:
         """Run the agent with cleanup when done."""
         try:
-            return await super().run(request)
+            return await super().run(request, on_event=on_event)
         finally:
             await self.cleanup()

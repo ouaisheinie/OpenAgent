@@ -1,0 +1,76 @@
+## Task 10 follow-up quality gate
+$ rg -n "TODO|FIXME|HACK|@ts-ignore|as any|test\.only" .gitignore .github/workflows/frontend-ci.yaml frontEnd/e2e/chat.spec.ts .omo/notepads/openmanus-web-service-frontend/learnings.md
+No flagged patterns found.
+
+$ rg -n "\.vite/|coverage/|\*\.tsbuildinfo|frontEnd/playwright-report/|frontEnd/test-results/" .gitignore
+56:coverage/
+204:.vite/
+205:*.tsbuildinfo
+208:frontEnd/playwright-report/
+209:frontEnd/test-results/
+
+$ rg -n "pnpm --dir frontEnd (install --frozen-lockfile|typecheck|lint|test -- --run|build)|working-directory" .github/workflows/frontend-ci.yaml
+33:        run: pnpm --dir frontEnd install --frozen-lockfile
+36:        run: pnpm --dir frontEnd typecheck
+39:        run: pnpm --dir frontEnd lint
+42:        run: pnpm --dir frontEnd test -- --run
+45:        run: pnpm --dir frontEnd build
+
+$ pnpm --dir frontEnd lint
+
+> openmanus-frontend@0.1.0 lint /Users/cd-20241113-002/work/OpenManus/frontEnd
+> eslint . --max-warnings=0
+
+
+$ pnpm --dir frontEnd test -- --run
+
+> openmanus-frontend@0.1.0 test /Users/cd-20241113-002/work/OpenManus/frontEnd
+> vitest run "--run"
+
+
+ RUN  v2.1.9 /Users/cd-20241113-002/work/OpenManus/frontEnd
+
+ ✓ src/__tests__/App.test.tsx (7 tests) 202ms
+ ✓ e2e/chat.spec.ts (1 test) 2ms
+
+ Test Files  2 passed (2)
+      Tests  8 passed (8)
+   Start at  09:40:49
+   Duration  1.13s (transform 70ms, setup 126ms, collect 636ms, tests 204ms, environment 692ms, prepare 115ms)
+
+
+$ pnpm --dir frontEnd test:e2e
+
+> openmanus-frontend@0.1.0 test:e2e /Users/cd-20241113-002/work/OpenManus/frontEnd
+> playwright test
+
+
+Running 3 tests using 3 workers
+
+[1/3] [chromium] › e2e/chat.spec.ts:141:1 › cancels an active task through the intercepted cancel endpoint
+[2/3] [chromium] › e2e/chat.spec.ts:110:1 › blocks empty submit and renders a structured submit error bubble
+[3/3] [chromium] › e2e/chat.spec.ts:34:1 › submits a message and renders the final assistant result without console errors
+  3 passed (4.3s)
+
+$ git status --short -- frontEnd/playwright-report frontEnd/test-results
+No unignored generated Playwright artifacts.
+
+$ uv run --with pre-commit pre-commit run --all-files
+black....................................................................Passed
+trim trailing whitespace.................................................Passed
+fix end of files.........................................................Passed
+check yaml...............................................................Passed
+check for added large files..............................................Passed
+autoflake................................................................Passed
+isort....................................................................Passed
+
+## Final generated artifact cleanup
+$ git status --short -- frontEnd/playwright-report frontEnd/test-results
+No unignored generated Playwright artifacts after final cleanup.
+
+## Final follow-up verification summary
+- `.gitignore` keeps `.vite/`, `coverage/`, and `*.tsbuildinfo`, and now ignores `frontEnd/playwright-report/` plus `frontEnd/test-results/`.
+- `.github/workflows/frontend-ci.yaml` uses root-scoped `pnpm --dir frontEnd ...` commands for install, typecheck, lint, test, and build.
+- `frontEnd/playwright-report/` and `frontEnd/test-results/` were removed after the e2e run regenerated them.
+- `pnpm --dir frontEnd lint`, `pnpm --dir frontEnd test -- --run`, `pnpm --dir frontEnd test:e2e`, and `uv run --with pre-commit pre-commit run --all-files` passed.
+- `git status --short -- frontEnd/playwright-report frontEnd/test-results` produced no generated artifact entries.

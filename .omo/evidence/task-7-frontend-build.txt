@@ -1,0 +1,230 @@
+# Task 7 frontend build evidence
+## pnpm --dir frontEnd install
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 33, reused 4, downloaded 18, added 0
+Progress: resolved 122, reused 48, downloaded 64, added 0
+Progress: resolved 203, reused 96, downloaded 95, added 0
+Progress: resolved 299, reused 130, downloaded 108, added 0
+ WARN  1 deprecated subdependencies found: whatwg-encoding@3.1.1
+Packages: +290
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 336, reused 160, downloaded 124, added 283
+Progress: resolved 336, reused 160, downloaded 128, added 288
+Progress: resolved 336, reused 160, downloaded 129, added 289
+Progress: resolved 336, reused 160, downloaded 130, added 290, done
+.../esbuild@0.21.5/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.21.5/node_modules/esbuild postinstall: Done
+
+dependencies:
++ react 18.3.1 (19.2.7 is available)
++ react-dom 18.3.1 (19.2.7 is available)
+
+devDependencies:
++ @eslint/js 9.39.4 (10.0.1 is available)
++ @playwright/test 1.61.0
++ @testing-library/dom 10.4.1
++ @testing-library/jest-dom 6.9.1
++ @testing-library/react 16.3.2
++ @testing-library/user-event 14.6.1
++ @types/node 22.20.0 (26.0.0 is available)
++ @types/react 18.3.31 (19.2.17 is available)
++ @types/react-dom 18.3.7 (19.2.3 is available)
++ @vitejs/plugin-react 4.7.0 (6.0.3 is available)
++ eslint 9.39.4 (10.5.0 is available)
++ eslint-plugin-react-hooks 5.2.0 (7.1.1 is available)
++ eslint-plugin-react-refresh 0.4.26 (0.5.3 is available)
++ globals 15.15.0 (17.7.0 is available)
++ jsdom 25.0.1 (29.1.1 is available)
++ typescript 5.9.3 (6.0.3 is available)
++ typescript-eslint 8.62.0
++ vite 5.4.21 (8.1.0 is available)
++ vitest 2.1.9 (4.1.9 is available)
+
+Done in 7.8s
+
+## pnpm --dir frontEnd typecheck
+
+> openmanus-frontend@0.1.0 typecheck /Users/cd-20241113-002/work/OpenManus/frontEnd
+> tsc --build --pretty false
+
+
+## pnpm --dir frontEnd lint
+
+> openmanus-frontend@0.1.0 lint /Users/cd-20241113-002/work/OpenManus/frontEnd
+> eslint . --max-warnings=0
+
+
+/Users/cd-20241113-002/work/OpenManus/frontEnd/playwright.config.d.ts
+  1:73  error  The `{}` ("empty object") type allows any non-nullish value, including literals like `0` and `""`.
+- If that's what you want, disable this lint rule with an inline comment or configure the 'allowObjectTypes' rule option.
+- If you want a type meaning "any object", you probably want `object` instead.
+- If you want a type meaning "any value", you probably want `unknown` instead  @typescript-eslint/no-empty-object-type
+  1:77  error  The `{}` ("empty object") type allows any non-nullish value, including literals like `0` and `""`.
+- If that's what you want, disable this lint rule with an inline comment or configure the 'allowObjectTypes' rule option.
+- If you want a type meaning "any object", you probably want `object` instead.
+- If you want a type meaning "any value", you probably want `unknown` instead  @typescript-eslint/no-empty-object-type
+
+✖ 2 problems (2 errors, 0 warnings)
+
+ ELIFECYCLE  Command failed with exit code 1.
+
+## rerun after build-artifact config fix
+## pnpm --dir frontEnd typecheck
+
+> openmanus-frontend@0.1.0 typecheck /Users/cd-20241113-002/work/OpenManus/frontEnd
+> tsc --noEmit -p tsconfig.json --pretty false && tsc --noEmit -p tsconfig.node.json --pretty false
+
+
+## pnpm --dir frontEnd lint
+
+> openmanus-frontend@0.1.0 lint /Users/cd-20241113-002/work/OpenManus/frontEnd
+> eslint . --max-warnings=0
+
+
+## pnpm --dir frontEnd test
+
+> openmanus-frontend@0.1.0 test /Users/cd-20241113-002/work/OpenManus/frontEnd
+> vitest run
+
+
+ RUN  v2.1.9 /Users/cd-20241113-002/work/OpenManus/frontEnd
+
+ ✓ src/__tests__/App.test.tsx (1 test) 33ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  23:34:43
+   Duration  812ms (transform 34ms, setup 56ms, collect 100ms, tests 33ms, environment 324ms, prepare 74ms)
+
+
+## pnpm --dir frontEnd build
+
+> openmanus-frontend@0.1.0 build /Users/cd-20241113-002/work/OpenManus/frontEnd
+> pnpm typecheck && vite build
+
+
+> openmanus-frontend@0.1.0 typecheck /Users/cd-20241113-002/work/OpenManus/frontEnd
+> tsc --noEmit -p tsconfig.json --pretty false && tsc --noEmit -p tsconfig.node.json --pretty false
+
+vite v5.4.21 building for production...
+transforming...
+✓ 32 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.53 kB │ gzip:  0.32 kB
+dist/assets/index-B4Yh_39P.css    5.89 kB │ gzip:  1.87 kB
+dist/assets/index-BoGBvF-C.js   145.42 kB │ gzip: 46.80 kB
+✓ built in 247ms
+
+## package boundary checks
+frontEnd package exists; root package.json, root pnpm-lock.yaml, and root pnpm-workspace.yaml absent; frontEnd pnpm-lock.yaml exists.
+
+## rerun after favicon fix
+## pnpm --dir frontEnd typecheck
+
+> openmanus-frontend@0.1.0 typecheck /Users/cd-20241113-002/work/OpenManus/frontEnd
+> tsc --noEmit -p tsconfig.json --pretty false && tsc --noEmit -p tsconfig.node.json --pretty false
+
+
+## pnpm --dir frontEnd lint
+
+> openmanus-frontend@0.1.0 lint /Users/cd-20241113-002/work/OpenManus/frontEnd
+> eslint . --max-warnings=0
+
+
+## pnpm --dir frontEnd test
+
+> openmanus-frontend@0.1.0 test /Users/cd-20241113-002/work/OpenManus/frontEnd
+> vitest run
+
+
+ RUN  v2.1.9 /Users/cd-20241113-002/work/OpenManus/frontEnd
+
+ ✓ src/__tests__/App.test.tsx (1 test) 34ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  23:38:03
+   Duration  778ms (transform 27ms, setup 47ms, collect 91ms, tests 34ms, environment 343ms, prepare 63ms)
+
+
+## pnpm --dir frontEnd build
+
+> openmanus-frontend@0.1.0 build /Users/cd-20241113-002/work/OpenManus/frontEnd
+> pnpm typecheck && vite build
+
+
+> openmanus-frontend@0.1.0 typecheck /Users/cd-20241113-002/work/OpenManus/frontEnd
+> tsc --noEmit -p tsconfig.json --pretty false && tsc --noEmit -p tsconfig.node.json --pretty false
+
+vite v5.4.21 building for production...
+transforming...
+✓ 32 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.60 kB │ gzip:  0.36 kB
+dist/assets/index-B4Yh_39P.css    5.89 kB │ gzip:  1.87 kB
+dist/assets/index-BoGBvF-C.js   145.42 kB │ gzip: 46.80 kB
+✓ built in 258ms
+
+## manual browser QA
+Loaded http://127.0.0.1:5173 with Playwright MCP; page title and h1 were OpenManus Console.
+Console errors after favicon fix: 0.
+Mobile viewport check: clientWidth=390 and scrollWidth=390.
+Screenshots: .omo/evidence/task-7-frontend-desktop.png and .omo/evidence/task-7-frontend-mobile.png.
+Vite dev server stopped; port 5173 clear.
+
+## final rerun after design-token cleanup
+## pnpm --dir frontEnd typecheck
+
+> openmanus-frontend@0.1.0 typecheck /Users/cd-20241113-002/work/OpenManus/frontEnd
+> tsc --noEmit -p tsconfig.json --pretty false && tsc --noEmit -p tsconfig.node.json --pretty false
+
+
+## pnpm --dir frontEnd lint
+
+> openmanus-frontend@0.1.0 lint /Users/cd-20241113-002/work/OpenManus/frontEnd
+> eslint . --max-warnings=0
+
+
+## pnpm --dir frontEnd test
+
+> openmanus-frontend@0.1.0 test /Users/cd-20241113-002/work/OpenManus/frontEnd
+> vitest run
+
+
+ RUN  v2.1.9 /Users/cd-20241113-002/work/OpenManus/frontEnd
+
+ ✓ src/__tests__/App.test.tsx (1 test) 32ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  23:46:26
+   Duration  747ms (transform 33ms, setup 46ms, collect 90ms, tests 32ms, environment 290ms, prepare 61ms)
+
+
+## pnpm --dir frontEnd build
+
+> openmanus-frontend@0.1.0 build /Users/cd-20241113-002/work/OpenManus/frontEnd
+> pnpm typecheck && vite build
+
+
+> openmanus-frontend@0.1.0 typecheck /Users/cd-20241113-002/work/OpenManus/frontEnd
+> tsc --noEmit -p tsconfig.json --pretty false && tsc --noEmit -p tsconfig.node.json --pretty false
+
+vite v5.4.21 building for production...
+transforming...
+✓ 32 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.60 kB │ gzip:  0.36 kB
+dist/assets/index-BL0GIvsi.css    7.14 kB │ gzip:  2.15 kB
+dist/assets/index-CXI7vj5_.js   145.42 kB │ gzip: 46.80 kB
+✓ built in 246ms
+
+## final browser QA after design-token cleanup
+Loaded http://127.0.0.1:5173; title and h1 were OpenManus Console.
+API fallback rendered as http://127.0.0.1:8000.
+Mobile viewport check after cleanup: clientWidth=390 and scrollWidth=390.
+Console errors: 0.
+Vite dev server stopped; port 5173 clear.

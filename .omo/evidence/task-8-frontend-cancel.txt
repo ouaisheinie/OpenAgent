@@ -1,0 +1,14 @@
+
+> openmanus-frontend@0.1.0 test /Users/cd-20241113-002/work/OpenManus/frontEnd
+> vitest run "--run" "-t" "cancel"
+
+
+ RUN  v2.1.9 /Users/cd-20241113-002/work/OpenManus/frontEnd
+
+ ✓ src/__tests__/App.test.tsx (5 tests | 4 skipped) 91ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 4 skipped (5)
+   Start at  01:45:12
+   Duration  1.89s (transform 82ms, setup 124ms, collect 260ms, tests 91ms, environment 640ms, prepare 92ms)
+

@@ -141,7 +141,7 @@ Wave 2: Tasks 5, 6, 8, 9, and 10 wire backend service/routes, frontend API/clien
 > Implementation + Test = ONE task. Never separate.
 > EVERY task MUST have: Agent Profile + Parallelization + QA Scenarios.
 
-- [ ] 1. Define API contracts and runtime bounds
+- [x] 1. Define API contracts and runtime bounds
 
   **What to do**: Create `app/api/__init__.py` and `app/api/models.py`. Define deterministic Pydantic models and enums exactly matching the `API Contract (V1, exact)` section: `TaskStatus`, `ToolProfile`, `TaskCreateRequest`, `TaskLinks`, `TaskCreateResponse`, `TaskStatusResponse`, `TaskResultResponse`, `TaskCancelResponse`, `TaskEvent`, `ApiError`, and `TaskEventsResponse`. Encode V1 defaults in one importable constant block inside `models.py`: backend host `127.0.0.1`, port `8000`, frontend origins `http://127.0.0.1:5173` and `http://localhost:5173`, max input length `20000`, default/max runtime `1800`, default/max steps `20/30`, max active tasks `4`, task TTL `3600`, event buffer max `200`. Add a helper for UTC `Z` datetime serialization. Add `tests/api/test_models.py` covering validation, default values, enum serialization, datetime format, and error/result shapes.
   **Must NOT do**: Do not add a database model, ORM, root settings framework, auth fields, user IDs, or persistent conversation schema. Do not change `app/schema.py`.
@@ -192,7 +192,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(api): define web task contracts` | Files: [`app/api/__init__.py`, `app/api/models.py`, `tests/api/test_models.py`]
 
-- [ ] 2. Implement in-memory task store and lifecycle event buffer
+- [x] 2. Implement in-memory task store and lifecycle event buffer
 
   **What to do**: Create `app/api/task_store.py` with an `InMemoryTaskStore` and `TaskRecord` that use the Task 1 models. Provide async-safe methods: `create_task(request)`, `get_task(task_id)`, `list_tasks()`, `mark_running(task_id)`, `mark_succeeded(task_id, final_text, raw_steps, messages)`, `mark_failed(task_id, error)`, `mark_cancelled(task_id, reason)`, `expire_old_tasks(now)`, `append_event(task_id, type, payload)`, `events_since(task_id, since_id)`, and `active_non_terminal_count()`. Use an `asyncio.Lock` to guard state; use UUID4 string task IDs; event IDs are monotonically increasing integers per task. Capacity counts `queued` + `running` tasks only. Add `tests/api/test_task_store.py` for lifecycle transitions, event buffer trimming to 200, TTL expiry after 3600s, unknown IDs, and active capacity helpers.
   **Must NOT do**: Do not introduce Redis, SQLite, files, database migrations, global mutable state outside the store instance, or multi-process guarantees.
@@ -233,7 +233,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(api): add in-memory task store` | Files: [`app/api/task_store.py`, `tests/api/test_task_store.py`]
 
-- [ ] 3. Add web-safe agent profiles with explicit tool allowlist
+- [x] 3. Add web-safe agent profiles with explicit tool allowlist
 
   **What to do**: Create `app/agent/web_manus.py`. Implement `WebManus(Manus)` that reuses Manus prompts while avoiding MCP auto-connect. Provide `build_web_tools(profile: ToolProfile, allow_dev_local: bool = False) -> ToolCollection` and `WebManus.create_for_web(profile, max_steps)` factory. Allowlist exactly: `chat` = `Terminate`; `browser` = `BrowserUseTool`, `Terminate`; `dev_local` = `PythonExecute`, `StrReplaceEditor`, `BrowserUseTool`, `Terminate` only when `allow_dev_local=True`. Ensure `AskHuman`, `Bash`, Daytona shell/sandbox tools, `ComputerUseTool`, and `MCPClientTool` never appear in any default web profile. Override MCP initialization so `Manus.think()` cannot lazily connect MCP in web mode. Add `tests/api/test_web_manus_guardrails.py` for all profiles and denied tools.
   **Must NOT do**: Do not edit `app/tool/ask_human.py`; do not remove tools from normal CLI `Manus`; do not enable `dev_local` by default; do not auto-connect MCP servers.
@@ -275,7 +275,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(agent): add web-safe manus profiles` | Files: [`app/agent/web_manus.py`, `tests/api/test_web_manus_guardrails.py`]
 
-- [ ] 4. Add optional agent progress callbacks and cancellation-safe cleanup
+- [x] 4. Add optional agent progress callbacks and cancellation-safe cleanup
 
   **What to do**: Minimally adapt `app/agent/base.py` and `app/agent/toolcall.py` so `run()` accepts optional `on_event: Callable[[dict], Awaitable[None]] | None = None` without breaking existing CLI callers. Emit `agent.step.started` before each step and `agent.step.completed` after each step with `current_step` and `max_steps`. Move `SANDBOX_CLIENT.cleanup()` in `BaseAgent.run()` into a `finally` so cleanup happens on cancellation/failure. Keep `ToolCallAgent.run()` cleanup in a `finally`; the API service must rely on `WebManus.run()` owning cleanup and must not call `agent.cleanup()` separately after awaiting `run()`. Add tests using a tiny fake agent subclass; do not call real LLMs.
   **Must NOT do**: Do not rewrite the ReAct loop, change existing CLI behavior, or add token streaming. Do not print events to stdout.
@@ -317,7 +317,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(agent): emit lifecycle events for web tasks` | Files: [`app/agent/base.py`, `app/agent/toolcall.py`, `tests/api/test_agent_events.py`]
 
-- [ ] 5. Implement backend task orchestration service
+- [x] 5. Implement backend task orchestration service
 
   **What to do**: Create `app/api/service.py` with `TaskService`. It owns an `InMemoryTaskStore`, an `agent_factory` defaulting to `WebManus.create_for_web`, a dict of running `asyncio.Task` handles, and methods `submit(request)`, `get_status(task_id)`, `get_result(task_id)`, `cancel(task_id)`, `shutdown()`, and `cleanup_expired()`. `submit()` first rejects `tool_profile:"dev_local"` with a deterministic service error mapped by routes to HTTP 403 `tool_profile_disabled` unless `OPENMANUS_API_ENABLE_DEV_LOCAL=1`; rejected tasks are not stored. Then `submit()` checks `active_non_terminal_count() < 4`; if not, return/raise a capacity error mapped by routes to HTTP 429 `capacity_exceeded` and do not store the request. If capacity is available, store queued task, schedule execution with `asyncio.create_task`, and return a 202 response. Execution must mark running, emit lifecycle events, call `await asyncio.wait_for(agent.run(message, on_event=...), timeout_seconds)`, derive `final_text` from the last non-empty assistant message (`agent.messages` from `app/agent/base.py:188-196`) falling back to `raw_steps`, and persist result/error. Cleanup is owned by `WebManus.run()`/`ToolCallAgent.run()`; `TaskService` must not call `agent.cleanup()` separately after `run()`. Timeouts become `failed` with error code `timeout`; cancellations become `cancelled`. `shutdown()` must cancel all non-done running asyncio tasks, `await asyncio.gather(..., return_exceptions=True)`, and leave store records in `cancelled` or terminal states. Add `tests/api/test_task_service.py` with mocked agent factory and no real LLM.
   **Must NOT do**: Do not run real `Manus` in tests, do not persist tasks to disk, do not expose multi-turn backend sessions, and do not swallow cancellation without marking task state.
@@ -370,7 +370,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(api): orchestrate web agent tasks` | Files: [`app/api/service.py`, `tests/api/test_task_service.py`]
 
-- [ ] 6. Wire FastAPI app, routes, CORS, and health endpoint
+- [x] 6. Wire FastAPI app, routes, CORS, and health endpoint
 
   **What to do**: Create `app/api/main.py` and `app/api/routes.py`. `main.py` defines `create_app(task_service: TaskService | None = None) -> FastAPI` and module-level `app = create_app()`. It attaches CORS middleware for only `http://127.0.0.1:5173` and `http://localhost:5173`, creates one `TaskService` in lifespan startup when no service is injected, cancels tasks on shutdown, and mounts routes. Add deterministic mocked-agent mode for tests/local QA: when `OPENMANUS_API_MOCK_AGENT=1`, the service uses a fake async agent that never calls a real LLM and returns `mocked response: <message>`. `routes.py` implements: `GET /health`, `POST /api/tasks`, `GET /api/tasks/{task_id}`, `GET /api/tasks/{task_id}/result`, `POST /api/tasks/{task_id}/cancel`, and `GET /api/tasks/{task_id}/events`. The events endpoint returns JSON `{ "events": [TaskEvent], "latest_event_id": int }` filtered by optional `?since=<id>`; do not implement SSE or token streaming in V1. Add `tests/api/test_routes.py` using FastAPI/httpx ASGI client and injected mocked service/agent.
   **Must NOT do**: Do not alter `protocol/a2a/app/main.py`; do not expose A2A JSON-RPC as the React API; do not enable wildcard CORS; do not start uvicorn from import time.
@@ -414,7 +414,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(api): expose task routes` | Files: [`app/api/main.py`, `app/api/routes.py`, `tests/api/test_routes.py`]
 
-- [ ] 7. Scaffold isolated pnpm Vite React TypeScript frontend
+- [x] 7. Scaffold isolated pnpm Vite React TypeScript frontend
 
   **What to do**: Populate the empty `frontEnd/` directory with a standalone Vite React TypeScript project using pnpm. Required files: `frontEnd/package.json`, `frontEnd/pnpm-lock.yaml`, `frontEnd/index.html`, `frontEnd/vite.config.ts`, `frontEnd/tsconfig.json`, `frontEnd/tsconfig.node.json`, `frontEnd/eslint.config.js`, `frontEnd/src/main.tsx`, `frontEnd/src/App.tsx`, `frontEnd/src/styles.css`, `frontEnd/src/types.ts`, `frontEnd/src/api.ts`, `frontEnd/src/__tests__/App.test.tsx`, and `frontEnd/playwright.config.ts`. Scripts: `dev`, `build`, `preview`, `lint`, `typecheck`, `test`, and `test:e2e`. Set Node engine `>=18`. Use `VITE_API_BASE_URL` defaulting to `http://127.0.0.1:8000`; do not rely on a Vite proxy in V1.
   **Must NOT do**: Do not add root `package.json`, root `pnpm-workspace.yaml`, or modify `app/tool/chart_visualization/package.json` / `package-lock.json`.
@@ -458,7 +458,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(frontend): scaffold chat app` | Files: [`frontEnd/package.json`, `frontEnd/pnpm-lock.yaml`, `frontEnd/index.html`, `frontEnd/vite.config.ts`, `frontEnd/tsconfig.json`, `frontEnd/tsconfig.node.json`, `frontEnd/eslint.config.js`, `frontEnd/src/**`, `frontEnd/playwright.config.ts`]
 
-- [ ] 8. Build frontend API client, polling state, and cancellation logic
+- [x] 8. Build frontend API client, polling state, and cancellation logic
 
   **What to do**: Implement `frontEnd/src/types.ts` and `frontEnd/src/api.ts` matching the backend Task 1 models exactly. Implement typed functions `createTask(message)`, `getTask(taskId)`, `getTaskResult(taskId)`, `cancelTask(taskId)`, and `getEvents(taskId, since?)` for JSON lifecycle event replay. In `frontEnd/src/App.tsx` or a dedicated hook file, implement task lifecycle state: local user message append, submit disabled while empty/running, poll `GET /api/tasks/{id}` every 1000ms while `queued|running`, fetch result on terminal status, render structured errors, and cancel active task via `POST /api/tasks/{id}/cancel`. Use `AbortController` to cancel in-flight fetches on unmount.
   **Must NOT do**: Do not call Python or agent code directly from frontend; do not store API keys in frontend; do not implement login/auth; do not fake success without using backend response shape.
@@ -500,7 +500,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(frontend): connect chat client to task api` | Files: [`frontEnd/src/types.ts`, `frontEnd/src/api.ts`, `frontEnd/src/App.tsx`, `frontEnd/src/__tests__/**`]
 
-- [ ] 9. Design and implement the React chat interface
+- [x] 9. Design and implement the React chat interface
 
   **What to do**: Implement a polished but focused chat UI in `frontEnd/src/App.tsx` and `frontEnd/src/styles.css`. Required UX: message transcript with user/assistant/system/error bubbles, textarea input with Enter-to-submit and Shift+Enter newline, submit button, cancel button visible only for active task, task status badge, disabled state during submit, empty state explaining V1 limitations, and accessible live region for status changes. Use a distinctive visual direction suitable for an agent control console: refined dark command-center theme, high-contrast readable typography, subtle grid/noise background, clear focus rings, responsive layout for desktop and mobile. Keep local browser-session message history only; no persistence required.
   **Must NOT do**: Do not build a full ChatGPT clone with accounts, sidebars, model picker, file upload, plugin marketplace, or settings screen. Do not use generic purple-gradient AI styling. Do not add external fonts that require network access at runtime unless self-hosted or system-safe fallback is provided.
@@ -544,7 +544,7 @@ PY` prints `models-ok`.
 
   **Commit**: NO | Message: `feat(frontend): implement chat interface` | Files: [`frontEnd/src/App.tsx`, `frontEnd/src/styles.css`, `frontEnd/src/__tests__/**`]
 
-- [ ] 10. Add integration QA, repo ignore updates, and frontend automation hooks
+- [x] 10. Add integration QA, repo ignore updates, and frontend automation hooks
 
   **What to do**: Add missing ignore patterns to root `.gitignore`: `.vite/`, `coverage/`, and `*.tsbuildinfo` without removing existing Python rules. Add `.github/workflows/frontend-ci.yaml` that checks out code, sets up Node >=18 with pnpm, runs `pnpm --dir frontEnd install --frozen-lockfile`, `pnpm --dir frontEnd typecheck`, `pnpm --dir frontEnd lint`, `pnpm --dir frontEnd test -- --run`, and `pnpm --dir frontEnd build`. Add a Dependabot npm entry for `/frontEnd` only. Add or update a small `frontEnd/README.md` documenting dev commands and backend URL. Add Playwright e2e tests under `frontEnd/e2e/chat.spec.ts` for submit, result, error, and cancel flows using mocked network route interception.
   **Must NOT do**: Do not modify existing Python release workflows except by adding a new frontend workflow. Do not add Git LFS assets or large media. Do not add a root workspace or touch chart visualization package locks.
@@ -592,10 +592,10 @@ PY` prints `models-ok`.
 > 4 review agents run in PARALLEL. ALL must APPROVE. Present consolidated results to user and get explicit "okay" before completing.
 > **Do NOT auto-proceed after verification. Wait for user's explicit approval before marking work complete.**
 > **Never mark F1-F4 as checked before getting user's okay.** Rejection or user feedback -> fix -> re-run -> present again -> wait for okay.
-- [ ] F1. Plan Compliance Audit — oracle
-- [ ] F2. Code Quality Review — unspecified-high
-- [ ] F3. Agent-Executed Browser QA — unspecified-high (+ playwright for frontend)
-- [ ] F4. Scope Fidelity Check — deep
+- [x] F1. Plan Compliance Audit — oracle
+- [x] F2. Code Quality Review — unspecified-high
+- [x] F3. Agent-Executed Browser QA — unspecified-high (+ playwright for frontend)
+- [x] F4. Scope Fidelity Check — deep
 
 ## Commit Strategy
 - Do not commit automatically. The user has not requested commits.

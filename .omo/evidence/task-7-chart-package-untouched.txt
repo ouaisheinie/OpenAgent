@@ -1,0 +1,9 @@
+# Task 7 chart package untouched evidence
+## GIT_MASTER=1 git diff -- app/tool/chart_visualization/package.json app/tool/chart_visualization/package-lock.json
+No diff in chart visualization package files.
+
+## final chart package diff check
+No diff in chart visualization package files after final QA.
+
+## final post-browser chart package diff check
+No diff in chart visualization package files after final browser QA.

@@ -53,6 +53,7 @@ htmlcov/
 .nox/
 .coverage
 .coverage.*
+coverage/
 .cache
 nosetests.xml
 coverage.xml
@@ -200,3 +201,9 @@ cython_debug/
 
 # node
 node_modules
+.vite/
+*.tsbuildinfo
+
+# Playwright output
+frontEnd/playwright-report/
+frontEnd/test-results/

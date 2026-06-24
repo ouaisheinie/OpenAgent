@@ -1,0 +1,16 @@
+GET /health
+{"status":"ok"}
+HTTP_STATUS:200
+
+POST /api/tasks
+{"task_id":"3856bc61-36ea-4890-bc50-71b178fcb027","status":"queued","created_at":"2026-06-23T17:02:57.248525Z","updated_at":"2026-06-23T17:02:57.248525Z","links":{"status":"/api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027","result":"/api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027/result","cancel":"/api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027/cancel","events":"/api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027/events"}}
+
+GET /api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027 (polled)
+{"task_id":"3856bc61-36ea-4890-bc50-71b178fcb027","status":"succeeded","agent_state":"mocking","current_step":1,"max_steps":2,"created_at":"2026-06-23T17:02:57.248525Z","updated_at":"2026-06-23T17:02:57.248863Z","started_at":"2026-06-23T17:02:57.248787Z","completed_at":"2026-06-23T17:02:57.248863Z","expires_at":"2026-06-23T18:02:57.248863Z","error":null,"latest_event_id":5,"links":{"status":"/api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027","result":"/api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027/result","cancel":"/api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027/cancel","events":"/api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027/events"}}
+
+GET /api/tasks/3856bc61-36ea-4890-bc50-71b178fcb027/result
+{"task_id":"3856bc61-36ea-4890-bc50-71b178fcb027","status":"succeeded","final_text":"mocked response: curl happy path","raw_steps":[{"type":"run_result","content":"mocked response: curl happy path"}],"messages":[{"role":"assistant","content":"mocked response: curl happy path"}],"error":null,"created_at":"2026-06-23T17:02:57.248525Z","completed_at":"2026-06-23T17:02:57.248863Z"}
+
+POST /api/tasks dev_local disabled
+{"error":{"code":"tool_profile_disabled","message":"Tool profile dev_local is disabled.","details":{"tool_profile":"dev_local"}}}
+HTTP_STATUS:403

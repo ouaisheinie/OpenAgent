@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from contextlib import asynccontextmanager
-from typing import List, Optional
+from typing import Awaitable, Callable, List, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -113,11 +113,16 @@ class BaseAgent(BaseModel, ABC):
         kwargs = {"base64_image": base64_image, **(kwargs if role == "tool" else {})}
         self.memory.add_message(message_map[role](content, **kwargs))
 
-    async def run(self, request: Optional[str] = None) -> str:
+    async def run(
+        self,
+        request: Optional[str] = None,
+        on_event: Callable[[dict], Awaitable[None]] | None = None,
+    ) -> str:
         """Execute the agent's main loop asynchronously.
 
         Args:
             request: Optional initial user request to process.
+            on_event: Optional async callback for agent lifecycle events.
 
         Returns:
             A string summarizing the execution results.
@@ -125,33 +130,54 @@ class BaseAgent(BaseModel, ABC):
         Raises:
             RuntimeError: If the agent is not in IDLE state at start.
         """
-        if self.state != AgentState.IDLE:
-            raise RuntimeError(f"Cannot run agent from state: {self.state}")
+        try:
+            if self.state != AgentState.IDLE:
+                raise RuntimeError(f"Cannot run agent from state: {self.state}")
 
-        if request:
-            self.update_memory("user", request)
+            if request:
+                self.update_memory("user", request)
 
-        results: List[str] = []
-        async with self.state_context(AgentState.RUNNING):
-            while (
-                self.current_step < self.max_steps and self.state != AgentState.FINISHED
-            ):
-                self.current_step += 1
-                logger.info(f"Executing step {self.current_step}/{self.max_steps}")
-                step_result = await self.step()
+            results: List[str] = []
+            async with self.state_context(AgentState.RUNNING):
+                while (
+                    self.current_step < self.max_steps
+                    and self.state != AgentState.FINISHED
+                ):
+                    self.current_step += 1
+                    logger.info(f"Executing step {self.current_step}/{self.max_steps}")
+                    if on_event:
+                        await on_event(
+                            {
+                                "type": "agent.step.started",
+                                "current_step": self.current_step,
+                                "max_steps": self.max_steps,
+                            }
+                        )
 
-                # Check for stuck state
-                if self.is_stuck():
-                    self.handle_stuck_state()
+                    step_result = await self.step()
 
-                results.append(f"Step {self.current_step}: {step_result}")
+                    if on_event:
+                        await on_event(
+                            {
+                                "type": "agent.step.completed",
+                                "current_step": self.current_step,
+                                "max_steps": self.max_steps,
+                            }
+                        )
 
-            if self.current_step >= self.max_steps:
-                self.current_step = 0
-                self.state = AgentState.IDLE
-                results.append(f"Terminated: Reached max steps ({self.max_steps})")
-        await SANDBOX_CLIENT.cleanup()
-        return "\n".join(results) if results else "No steps executed"
+                    # Check for stuck state
+                    if self.is_stuck():
+                        self.handle_stuck_state()
+
+                    results.append(f"Step {self.current_step}: {step_result}")
+
+                if self.current_step >= self.max_steps:
+                    self.current_step = 0
+                    self.state = AgentState.IDLE
+                    results.append(f"Terminated: Reached max steps ({self.max_steps})")
+            return "\n".join(results) if results else "No steps executed"
+        finally:
+            await SANDBOX_CLIENT.cleanup()
 
     @abstractmethod
     async def step(self) -> str:

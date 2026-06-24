@@ -1,0 +1,45 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches:
+      - '**'
+    paths:
+      - 'frontEnd/**'
+      - '.github/workflows/frontend-ci.yaml'
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'frontEnd/**'
+      - '.github/workflows/frontend-ci.yaml'
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install frontend dependencies
+        run: pnpm --dir frontEnd install --frozen-lockfile
+
+      - name: Typecheck frontend
+        run: pnpm --dir frontEnd typecheck
+
+      - name: Lint frontend
+        run: pnpm --dir frontEnd lint
+
+      - name: Test frontend
+        run: pnpm --dir frontEnd test -- --run
+
+      - name: Build frontend
+        run: pnpm --dir frontEnd build

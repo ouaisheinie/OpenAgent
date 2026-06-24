@@ -47,6 +47,16 @@ updates:
           - "duckduckgo_search"
           - "pre-commit"
 
+  - package-ecosystem: "npm"
+    directory: "/frontEnd"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 4
+    groups:
+      frontend-npm:
+        patterns:
+          - "*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
